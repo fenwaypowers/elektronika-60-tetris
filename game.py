@@ -1,15 +1,22 @@
 import curses
 from time import time, sleep
 from collections import defaultdict
+from settings import load_controls
+import os
 
 from pieces import *
 
+SCRIPT_PATH = os.path.abspath(os.path.dirname(__file__))
+DEFAULT_CFG_PATH = os.path.join(SCRIPT_PATH, "settings.ini")
 
 def main(stdscr):
 	"""
 	Main function which controls Tetris game logic.
 	:param stdscr: standard curses screen; will be supplied by wrapper function
 	"""
+
+	settings = load_controls(DEFAULT_CFG_PATH)
+
 	setup_main_window(stdscr)
 	height, width = stdscr.getmaxyx()
 
@@ -42,17 +49,19 @@ def main(stdscr):
 		# this method is non-blocking (set in setup_main_window)
 		c = stdscr.getch()
 
-		if c == curses.KEY_RIGHT:
+		if c == settings.move_right:
 			candidate_positions = block.move_right()
-		elif c == curses.KEY_LEFT:
+		elif c == settings.move_left:
 			candidate_positions = block.move_left()
-		elif c == curses.KEY_DOWN:
+		elif c == settings.move_down:
 			advanced_positions = block.advance()
-		elif c == ord('a'):
+		elif c == settings.rotate_clockwise:
 			candidate_positions = block.rotate_clockwise()
-		elif c == ord('d'):
+		elif c == settings.rotate_anti_clockwise:
 			candidate_positions = block.rotate_anti_clockwise()
-		elif c == ord('q'):
+		elif c == settings.hard_drop:
+			pass
+		elif c == settings.quit:
 			break
 
 		if time() - timer >= time_interval:
@@ -94,11 +103,9 @@ def main(stdscr):
 
 			re_draw_piece(play_window, block)
 
-
 """
 ===================Drawing functions===================
 """
-
 
 def setup_main_window(window):
 	window.keypad(True)
@@ -112,11 +119,9 @@ def setup_main_window(window):
 	# no cursor
 	curses.curs_set(0)
 
-
 PLAY_AREA_WIDTH = 10
 PLAY_AREA_HEIGHT = 20
 START_LINE = 4
-
 
 def setup_play_window(console_width):
 	# height and width of the new window + 2 to account for the borders
@@ -127,11 +132,9 @@ def setup_play_window(console_width):
 
 	return play_window
 
-
 STATS_AREA_WIDTH = 7
 STATS_AREA_HEIGHT = 20
 STATS_PIECES = (T_Piece, J_Piece, Z_Piece, Square, S_Piece, L_Piece, LongBar)
-
 
 def setup_statistics(console_width):
 	statistics_window = curses.newwin(
@@ -160,7 +163,6 @@ def setup_statistics(console_width):
 
 	return stats
 
-
 def statistics_gen(window):
 	"""
 	Corutine which maintains statistics and updates statistic window. Piece which shall be included in statistics is
@@ -181,10 +183,8 @@ def statistics_gen(window):
 		piece = yield
 		stats[piece] += 1
 
-
 NEXT_PIECE_AREA_WIDTH = 4
 NEXT_PIECE_AREA_HEIGHT = 5
-
 
 def setup_next_piece_window(console_width):
 	next_piece_window = curses.newwin(
@@ -196,10 +196,8 @@ def setup_next_piece_window(console_width):
 
 	return next_piece_window
 
-
 SCORE_AREA_WIDTH = 4
 SCORE_AREA_HEIGHT = 8
-
 
 def setup_score(console_width):
 	score_window = curses.newwin(
@@ -216,9 +214,7 @@ def setup_score(console_width):
 
 	return initial_time_interval, score
 
-
 INITIAL_TIME_INTERVAL = 1
-
 
 def score_gen(window):
 	"""
@@ -263,9 +259,7 @@ def score_gen(window):
 		lvl = lines // 10
 		current_time_interval = update_time_interval()
 
-
 HELP_AREA_HEIGHT = 3
-
 
 def setup_help(console_width):
 	help_window = curses.newwin(
@@ -279,7 +273,6 @@ def setup_help(console_width):
 	help_window.addstr(3, 20, "Q - Quit", curses.A_BOLD)
 	help_window.refresh()
 
-
 # associated given piece with color pairs defined in init_colors
 COLOR_MAP = {
 	T_Piece(): 1,
@@ -290,7 +283,6 @@ COLOR_MAP = {
 	L_Piece(): 6,
 	LongBar(): 7
 }
-
 
 def init_colors():
 	"""
@@ -304,7 +296,6 @@ def init_colors():
 	curses.init_pair(6, curses.COLOR_RED, curses.COLOR_BLACK)
 	curses.init_pair(7, curses.COLOR_WHITE, curses.COLOR_BLACK)
 
-
 def re_draw_piece(window, piece: AbstractPiece):
 	previous_positions = piece.previous_positions
 
@@ -314,7 +305,6 @@ def re_draw_piece(window, piece: AbstractPiece):
 			window.addch(old_y, 2 * old_x + 2, " ")
 
 	draw_piece(window, piece)
-
 
 def draw_piece(window, piece, x_offset=1):
 	for new_y, new_x in piece.current_positions:
@@ -326,7 +316,6 @@ def draw_piece(window, piece, x_offset=1):
 		window.addch(new_y, 2 * new_x + x_offset + 1, "]", curses.color_pair(color))
 
 	window.refresh()
-
 
 def draw_next_piece(window, piece_class):
 	def erase_piece():
@@ -347,7 +336,6 @@ def draw_next_piece(window, piece_class):
 
 	draw_piece(window, next_piece, x_offset)
 
-
 def draw_stack(window, stack):
 	if stack['previous_positions']:
 		for y, x in stack['previous_positions']:
@@ -361,7 +349,6 @@ def draw_stack(window, stack):
 		window.addch(y, 2 * x + 2, "]", curses.color_pair(color))
 
 	window.refresh()
-
 
 def clear_line_animation(window, lines):
 	def fill_with(char):
@@ -389,7 +376,6 @@ def clear_line_animation(window, lines):
 	for _ in range(nbr_of_cycles):
 		animation_cycle()
 
-
 def end_animation(window):
 	for y in range(1, PLAY_AREA_HEIGHT + 1):
 		for x in range(PLAY_AREA_WIDTH):
@@ -400,11 +386,9 @@ def end_animation(window):
 
 	sleep(1)
 
-
 """
 ===================Game logic functions===================
 """
-
 
 def validate_positions(requested_positions, stack):
 	for candidate_y, candidate_x in requested_positions:
@@ -419,7 +403,6 @@ def validate_positions(requested_positions, stack):
 
 	return True
 
-
 def is_inside_stack(requested_positions, stack):
 	for candidate_point in requested_positions:
 		if candidate_point in stack['positions']:
@@ -433,7 +416,6 @@ def is_inside_stack(requested_positions, stack):
 
 	return False
 
-
 def increase_stack(piece, stack):
 	affected_lines = set()
 	color = COLOR_MAP[piece]
@@ -444,7 +426,6 @@ def increase_stack(piece, stack):
 		affected_lines.add(line)
 
 	return affected_lines
-
 
 def check_cleared_lines(stack, affected_lines):
 	cleared_lines = list()
@@ -460,7 +441,6 @@ def check_cleared_lines(stack, affected_lines):
 			cleared_lines.append(line)
 
 	return cleared_lines
-
 
 def clear_lines(lines, stack):
 	def count_lines_above(line):
@@ -492,7 +472,6 @@ def clear_lines(lines, stack):
 
 	stack['previous_positions'] = stack['positions']
 	stack['positions'] = new_positions
-
 
 if __name__ == '__main__':
 	curses.wrapper(main)

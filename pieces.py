@@ -4,7 +4,6 @@ Collection of base pieces used in Tetris game.
 from enum import Enum
 import random
 
-
 def get_positions_from_rotation(rotation_block, orientation_enum):
     positions = list()
 
@@ -16,7 +15,6 @@ def get_positions_from_rotation(rotation_block, orientation_enum):
         positions.append(new_position)
 
     return positions
-
 
 class AbstractPiece:
     def __init__(self, initial_rotation_block_position=(1, 5)):
@@ -95,7 +93,6 @@ class AbstractPiece:
     def rotate_anti_clockwise(self):
         raise NotImplementedError()
 
-
 class Square(AbstractPiece):
     """
     0 1
@@ -116,7 +113,6 @@ class Square(AbstractPiece):
 
     def rotate_anti_clockwise(self):
         return self.rotate_clockwise()
-
 
 class LongBar(AbstractPiece):
     """
@@ -142,7 +138,6 @@ class LongBar(AbstractPiece):
 
     def rotate_anti_clockwise(self):
         return self.rotate_clockwise()
-
 
 class L_Piece(AbstractPiece):
     """
@@ -182,7 +177,6 @@ class L_Piece(AbstractPiece):
 
         return get_positions_from_rotation(self.rotation_block, self.requested_orientation)
 
-
 class J_Piece(AbstractPiece):
     """
     0 1 2
@@ -221,7 +215,6 @@ class J_Piece(AbstractPiece):
 
         return get_positions_from_rotation(self.rotation_block, self.requested_orientation)
 
-
 class Z_Piece(AbstractPiece):
     """
     0 1
@@ -250,7 +243,6 @@ class Z_Piece(AbstractPiece):
     def rotate_anti_clockwise(self):
         return self.rotate_clockwise()
 
-
 class S_Piece(AbstractPiece):
     """
       0 1
@@ -278,7 +270,6 @@ class S_Piece(AbstractPiece):
 
     def rotate_anti_clockwise(self):
         return self.rotate_clockwise()
-
 
 class T_Piece(AbstractPiece):
     """
@@ -318,9 +309,7 @@ class T_Piece(AbstractPiece):
 
         return get_positions_from_rotation(self.rotation_block, self.requested_orientation)
 
-
 all_pieces = (Square, LongBar, L_Piece, J_Piece, Z_Piece, S_Piece, T_Piece)
-
 
 def get_random_piece():
     return random.choice(all_pieces)
