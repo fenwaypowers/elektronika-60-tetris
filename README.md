@@ -1,11 +1,1 @@
-# Tetris in Command Line!
-
-NES-like _Tetris_ game, playable in terminal. It uses curses - basic module which allows to manipulate content of terminal window.
-
-To start a new game type in terminal:
-
-`python game.py`
-
-<p align="center">
-  <img src=preview.gif/>
-</p>
+Tetris playable in command line (made in Python) that aims to emulate the experience of the original version of the game from the Electronika 60. 
