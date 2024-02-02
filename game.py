@@ -25,7 +25,6 @@ def main(stdscr):
 	stats = setup_statistics(width)
 	next_piece_window = setup_next_piece_window(width)
 	time_interval, score = setup_score(width)
-	setup_help(width)
 
 	block = get_random_piece()()
 	stats.send(block)
@@ -115,9 +114,7 @@ def setup_main_window(window):
 	window.nodelay(True)
 	window.refresh()
 	init_colors()
-	title = "Command Line Tetris"
 	height, width = window.getmaxyx()
-	window.addstr(2, width // 2 - len(title) // 2, title)
 
 	# no cursor
 	curses.curs_set(0)
@@ -261,20 +258,6 @@ def score_gen(window):
 		score += calculate_score(nbr_of_cleared_lines)
 		lvl = lines // 10
 		current_time_interval = update_time_interval()
-
-HELP_AREA_HEIGHT = 3
-
-def setup_help(console_width):
-	help_window = curses.newwin(
-		HELP_AREA_HEIGHT + 2, 2 * STATS_AREA_WIDTH + 2 + 2 * PLAY_AREA_WIDTH + 2 + 2 * SCORE_AREA_WIDTH + 2,
-		START_LINE + STATS_AREA_HEIGHT + 2, console_width // 2 - PLAY_AREA_WIDTH - 2 * STATS_AREA_WIDTH - 2
-	)
-
-	help_window.border()
-	help_window.addstr(1, 4, "LEFT/RIGHT/DOWN arrow keys to move piece", curses.A_BOLD)
-	help_window.addstr(2, 1, "A - rotate clockwise, D - rotate anticlockwise", curses.A_BOLD)
-	help_window.addstr(3, 20, "Q - Quit", curses.A_BOLD)
-	help_window.refresh()
 
 # associated given piece with color pairs defined in init_colors
 COLOR_MAP = {
