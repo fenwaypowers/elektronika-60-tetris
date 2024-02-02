@@ -2,6 +2,7 @@
 Collection of base pieces used in Tetris game.
 """
 from enum import Enum
+from logic import *
 import random
 
 def get_positions_from_rotation(rotation_block, orientation_enum):
@@ -29,6 +30,8 @@ class AbstractPiece:
         # Only for drawing - needs to be maintained in order to erase previous positions of the piece from window
         self.previous_rotation_block = None
         self.previous_orientation = None
+
+        self.locked = False
 
     def __hash__(self):
         return hash(self.__class__.__name__)
@@ -79,9 +82,9 @@ class AbstractPiece:
 
         return get_positions_from_rotation(self.requested_rotation_block, self.orientation)
 
-    def advance(self):
+    def advance(self, distance: int = 1):
         self.requested_rotation_block = (
-            self.rotation_block[0] + 1,
+            self.rotation_block[0] + distance,
             self.rotation_block[1]
         )
 
@@ -92,6 +95,30 @@ class AbstractPiece:
 
     def rotate_anti_clockwise(self):
         raise NotImplementedError()
+    
+    def hard_drop(self, stack, PLAY_AREA_HEIGHT, PLAY_AREA_WIDTH):
+        """
+        Calculate the maximum distance the piece can drop and move it to that position.
+        """
+        max_drop_distance = self.calculate_max_drop_distance(
+            stack, PLAY_AREA_HEIGHT, PLAY_AREA_WIDTH)
+        
+        self.locked = True
+        
+        return self.advance(distance=max_drop_distance)
+
+    def calculate_max_drop_distance(self, stack, PLAY_AREA_HEIGHT, PLAY_AREA_WIDTH):
+        """
+        Calculate how far the piece can drop without hitting another piece or the bottom of the play area.
+        """
+        distance = 0
+        while True:
+            potential_drop_positions = self.advance(distance=distance + 1)
+            if not validate_positions(potential_drop_positions, stack, PLAY_AREA_HEIGHT, PLAY_AREA_WIDTH):
+                break
+            distance += 1
+        return distance
+
 
 class Square(AbstractPiece):
     """

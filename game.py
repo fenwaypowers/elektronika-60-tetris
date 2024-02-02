@@ -2,6 +2,7 @@ import curses
 from time import time, sleep
 from collections import defaultdict
 from settings import load_controls
+from logic import *
 import os
 
 from pieces import *
@@ -49,19 +50,21 @@ def main(stdscr):
 		# this method is non-blocking (set in setup_main_window)
 		c = stdscr.getch()
 
-		if c == settings.move_right:
-			candidate_positions = block.move_right()
-		elif c == settings.move_left:
-			candidate_positions = block.move_left()
-		elif c == settings.move_down:
-			advanced_positions = block.advance()
-		elif c == settings.rotate_clockwise:
-			candidate_positions = block.rotate_clockwise()
-		elif c == settings.rotate_anti_clockwise:
-			candidate_positions = block.rotate_anti_clockwise()
-		elif c == settings.hard_drop:
-			pass
-		elif c == settings.quit:
+		if not block.locked:
+			if c == settings.move_right:
+				candidate_positions = block.move_right()
+			elif c == settings.move_left:
+				candidate_positions = block.move_left()
+			elif c == settings.move_down:
+				advanced_positions = block.advance()
+			elif c == settings.rotate_clockwise:
+				candidate_positions = block.rotate_clockwise()
+			elif c == settings.rotate_anti_clockwise:
+				candidate_positions = block.rotate_anti_clockwise()
+			elif c == settings.hard_drop:
+				advanced_positions = block.hard_drop(stack, PLAY_AREA_HEIGHT, PLAY_AREA_WIDTH)
+		
+		if c == settings.quit:
 			break
 
 		if time() - timer >= time_interval:
@@ -70,22 +73,22 @@ def main(stdscr):
 			timer = time()
 
 		if candidate_positions:
-			if validate_positions(candidate_positions, stack):
+			if validate_positions(candidate_positions, stack, PLAY_AREA_HEIGHT, PLAY_AREA_WIDTH):
 				block.accept_move()
 				re_draw_piece(play_window, block)
 			else:
 				block.reject_move()
 
 		if advanced_positions:
-			if is_inside_stack(advanced_positions, stack):
-				affected_lines = increase_stack(block, stack)
+			if is_inside_stack(advanced_positions, stack, PLAY_AREA_HEIGHT):
+				affected_lines = increase_stack(block, stack, COLOR_MAP)
 
 				if 1 in affected_lines:
 					# game over
 					end_animation(play_window)
 					break
 
-				cleared_lines = check_cleared_lines(stack, affected_lines)
+				cleared_lines = check_cleared_lines(stack, affected_lines, PLAY_AREA_WIDTH)
 
 				if cleared_lines:
 					clear_line_animation(play_window, cleared_lines)
@@ -382,96 +385,9 @@ def end_animation(window):
 			window.addch(y, 2 * x + 1, curses.ACS_CKBOARD)
 			window.addch(y, 2 * x + 2, curses.ACS_CKBOARD)
 			window.refresh()
-			sleep(0.02)
+			sleep(0.005)
 
 	sleep(1)
-
-"""
-===================Game logic functions===================
-"""
-
-def validate_positions(requested_positions, stack):
-	for candidate_y, candidate_x in requested_positions:
-		if candidate_y <= 0 or candidate_y > PLAY_AREA_HEIGHT:
-			return False
-
-		if candidate_x < 0 or candidate_x >= PLAY_AREA_WIDTH:
-			return False
-
-		if (candidate_y, candidate_x) in stack['positions']:
-			return False
-
-	return True
-
-def is_inside_stack(requested_positions, stack):
-	for candidate_point in requested_positions:
-		if candidate_point in stack['positions']:
-			return True
-
-		candidate_y, _ = candidate_point
-
-		if candidate_y > PLAY_AREA_HEIGHT:
-			# last row
-			return True
-
-	return False
-
-def increase_stack(piece, stack):
-	affected_lines = set()
-	color = COLOR_MAP[piece]
-
-	for position in piece.current_positions:
-		stack['positions'][position] = color
-		line, _ = position
-		affected_lines.add(line)
-
-	return affected_lines
-
-def check_cleared_lines(stack, affected_lines):
-	cleared_lines = list()
-
-	for line in affected_lines:
-		line_cleared = True
-		for x in range(PLAY_AREA_WIDTH):
-			if (line, x) not in stack['positions']:
-				line_cleared = False
-				break
-
-		if line_cleared:
-			cleared_lines.append(line)
-
-	return cleared_lines
-
-def clear_lines(lines, stack):
-	def count_lines_above(line):
-		cnt = 0
-
-		for cleared_line in lines:
-			if line < cleared_line:
-				cnt += 1
-
-		return cnt
-
-	new_positions = dict()
-
-	max_line = max(lines)
-	# update remaining stack positions
-	for position, color in stack['positions'].items():
-		y, x = position
-
-		if y in lines:
-			continue
-
-		if y > max_line:
-			# current position is below cleared lines
-			# position doesn't need to be updated
-			new_positions[position] = color
-		else:
-			new_position = (y + count_lines_above(y), x)
-			new_positions[new_position] = color
-
-	stack['previous_positions'] = stack['positions']
-	stack['positions'] = new_positions
 
 if __name__ == '__main__':
 	curses.wrapper(main)
